@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تسجيل العملاء</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-image: url('https://www.lawsetihad.com/img/8.webp'); /* رابط الصورة الجديد */
+            background-size: cover; /* لتغطية الشاشة بالكامل */
+            background-position: center; /* لتوسيط الصورة */
+            background-repeat: no-repeat; /* لمنع تكرار الصورة */
+            color: #2C3E50; /* لون النص */
+            text-align: center;
+            padding: 50px 0;
+        }
+
+        .container {
+            background-color: #ffffff;
+            width: 400px;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 26px;
+            color: #2C3E50;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            font-size: 18px;
+            color: #34495E;
+            margin-bottom: 15px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            margin: 12px 0;
+            border: 1px solid #BDC3C7;
+            border-radius: 8px;
+            font-size: 16px;
+            background-color: #ecf0f1;
+            color: #2C3E50;
+            transition: 0.3s;
+        }
+
+        input[type="text"]:focus {
+            border-color: #2980B9;
+            outline: none;
+            box-shadow: 0 0 5px rgba(41, 128, 185, 0.6);
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #2980B9;
+            color: white;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #3498DB;
+        }
+
+        #result {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #2C3E50;
+        }
+
+        .alert {
+            background-color: #2ECC71;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        .error {
+            background-color: #E74C3C;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .error.show {
+            display: block;
+        }
+
+        #updateSection {
+            display: none;
+            margin-top: 20px;
+        }
+
+        #updateSection input {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>تسجيل العميل</h1>
+
+        <!-- Alert for registration success -->
+        <div class="alert" id="successAlert">
+            تم تسجيل العميل بنجاح!
+        </div>
+
+        <!-- Error Alert for already existing customer -->
+        <div class="error" id="errorAlert">
+            هذا الاسم مسجل بالفعل!
+        </div>
+
+        <!-- Update Section for changing the customer ID -->
+        <div id="updateSection">
+            <h2>تغيير رقم العميل</h2>
+            <label for="newCustomerId">رقم العميل الجديد:</label>
+            <input type="text" id="newCustomerId" placeholder="أدخل رقم العميل الجديد">
+            <button onclick="updateCustomerId()">تحديث الرقم</button>
+        </div>
+
+        <form id="customerForm">
+            <label for="customerName">اسم العميل:</label>
+            <input type="text" id="customerName" name="customerName" placeholder="أدخل اسم العميل" required>
+
+            <label for="customerId">رقم العميل:</label>
+            <input type="text" id="customerId" name="customerId" placeholder="أدخل رقم العميل" required>
+
+            <button type="submit">تسجيل</button>
+        </form>
+
+        <h2>بحث عن العميل</h2>
+        <input type="text" id="searchName" placeholder="ابحث عن اسم العميل">
+        <button onclick="searchCustomer()">بحث</button>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        // جلب البيانات من localStorage أو تهيئة مصفوفة فارغة
+        let customers = JSON.parse(localStorage.getItem('customers')) || [];
+
+        // حفظ البيانات في localStorage
+        function saveData() {
+            localStorage.setItem('customers', JSON.stringify(customers));
+        }
+
+        document.getElementById('customerForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const name = document.getElementById('customerName').value;
+            const id = document.getElementById('customerId').value;
+
+            // التحقق إذا كان العميل موجودًا بالفعل
+            const existingCustomer = customers.find(c => c.name.toLowerCase() === name.toLowerCase());
+
+            if (existingCustomer) {
+                // إذا كان العميل موجودًا، إظهار التنبيه مع خيار تغيير الرقم
+                const errorAlert = document.getElementById('errorAlert');
+                errorAlert.classList.add('show');
+                
+                // إظهار قسم تغيير الرقم
+                document.getElementById('updateSection').style.display = 'block';
+
+                // إخفاء التنبيه بعد 3 ثواني
+                setTimeout(() => {
+                    errorAlert.classList.remove('show');
+                }, 3000);
+            } else {
+                // إذا لم يكن العميل موجودًا، إضافة عميل جديد
+                customers.push({ name, id });
+                saveData();  // حفظ البيانات في localStorage
+
+                // مسح الحقول بعد الإدخال
+                document.getElementById('customerName').value = '';
+                document.getElementById('customerId').value = '';
+
+                // عرض إشعار التسجيل
+                const successAlert = document.getElementById('successAlert');
+                successAlert.classList.add('show');
+
+                // إخفاء الإشعار بعد 3 ثواني
+                setTimeout(() => {
+                    successAlert.classList.remove('show');
+                }, 3000);
+            }
+        });
+
+        function searchCustomer() {
+            const searchName = document.getElementById('searchName').value;
+            const customer = customers.find(c => c.name.toLowerCase() === searchName.toLowerCase());
+
+            if (customer) {
+                document.getElementById('result').innerHTML = `رقم العميل: ${customer.id}`;
+                document.getElementById('result').style.color = '#2ECC71';
+            } else {
+                document.getElementById('result').innerHTML = 'العميل غير موجود';
+                document.getElementById('result').style.color = '#E74C3C';
+            }
+        }
+
+        function updateCustomerId() {
+            const name = document.getElementById('customerName').value;
+            const newId = document.getElementById('newCustomerId').value;
+
+            // التحقق من إدخال رقم العميل الجديد
+            if (newId) {
+                const customer = customers.find(c => c.name.toLowerCase() === name.toLowerCase());
+                if (customer) {
+                    customer.id = newId; // تحديث الرقم
+                    saveData();  // حفظ البيانات بعد التحديث
+                    alert(`تم تحديث رقم العميل إلى: ${newId}`);
+
+                    // إخفاء قسم تغيير الرقم
+                    document.getElementById('updateSection').style.display = 'none';
+                }
+            } else {
+                alert("يرجى إدخال رقم العميل الجديد");
+            }
+        }
+    </script>
+
+</body>
+</html>
